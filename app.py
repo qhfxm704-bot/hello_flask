@@ -2,11 +2,7 @@ from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
-messages = [
-    {"skill": "Python"},
-    {"skill": "HTML"},
-    {"skill": "SQL"}
-    ]
+messages = []
 
 @app.route('/')
 def home():
@@ -55,6 +51,35 @@ def delete_selected():
 
     for item in remaining_messages:
         messages.append(item)
+
+    return redirect('/')
+
+@app.route('/edit/<int:index>')
+def edit(index):
+    if index < 0 or index >= len(messages):
+        return redirect('/')
+    
+    item = messages[index]
+
+    return render_template('edit.html', item=item, index=index)
+
+@app.route('/update/<int:index>', methods=['POST'])
+def update(index):
+    if index < 0 or index >= len(messages):
+        return redirect('/')
+    
+    skill = request.form.get('skill', '').strip()
+    level = request.form.get('level', '').strip()
+    status = request.form.get('status', '').strip()
+
+    if not skill or not level or not status:
+        return redirect(f'/edit/{index}')
+    
+    messages[index] = {
+        "skill": skill,
+        "level": level,
+        "status": status
+    }
 
     return redirect('/')
 

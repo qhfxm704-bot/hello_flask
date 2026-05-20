@@ -57,6 +57,13 @@
 					</div>
 
 					<div class="flex gap-2">
+						<a 
+							href="/edit/{{ loop.index0 }}"
+							class="bg-green-500 text-white px-3 py-1 rounded"
+						>
+							수정
+						</a>
+						
 						<button
 							type="submit"
 							formaction="/delete/{{ loop.index0 }}"
