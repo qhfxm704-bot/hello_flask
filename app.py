@@ -3,7 +3,11 @@ from flask import Flask, render_template, request, redirect
 app = Flask(__name__)
 
 messages = []
-next_id = 1
+
+def get_next_id(items):
+    ids = [item["id"] for item in items]
+
+    return max(ids, default=0) + 1
 
 @app.route('/')
 def home():
@@ -11,8 +15,6 @@ def home():
 
 @app.route('/send', methods=['POST'])
 def send():
-    global next_id
-
     skill = request.form.get('skill', '').strip()
     level = request.form.get('level', '').strip()
     status = request.form.get('status', '').strip()
@@ -20,14 +22,14 @@ def send():
     if not skill or not level or not status:
         return redirect('/')
     
+    new_id = get_next_id(messages)
+    
     messages.append({
-        "id": next_id,
+        "id": new_id,
         "skill": skill,
         "level": level,
         "status": status
     })
-
-    next_id += 1
     
     return redirect('/')
 
@@ -65,6 +67,7 @@ def delete_selected():
 @app.route('/edit/<int:item_id>')
 def edit(item_id):
     target_item = None
+    
     for item in messages:
         if item["id"] == item_id:
             target_item = item
