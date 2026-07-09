@@ -1,107 +1,139 @@
 from flask import Flask, render_template, request, redirect
+import sqlite3
 
 app = Flask(__name__)
 
-messages = []
+def init_db():
+    conn = sqlite3.connect('skills.db')
+    cur = conn.cursor()
 
-def get_next_id(items):
-    ids = [item["id"] for item in items]
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS skills(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT  NULL,
+            status TEXT NOT NULL
+        )
+    """)
 
-    return max(ids, default=0) + 1
+    conn.commit()
+    conn.close()
+
+def get_skills():
+    conn = sqlite3.connect('skills.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM skills ORDER BY id DESC")
+    skills = cur.fetchall()
+
+    conn.close()
+    return skills
+
+def add_skill(name, status):
+    conn = sqlite3.connect('skills.db')
+    cur = conn.cursor()
+
+    cur.execute(
+        "INSERT INTO skills (name, status) VALUES (?, ?)"
+        , (name, status)
+    )
+
+    conn.commit()
+    conn.close()
+
+def delete_skill(skill_id):
+    conn = sqlite3.connect('skills.db')
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM skills WHERE id = ?",
+        (skill_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+def delete_all_skills():
+    conn = sqlite3.connect('skills.db')
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM skills")
+
+    conn.commit()
+    conn.close()
+
+def get_skill(skill_id):
+    conn = sqlite3.connect('skills.db')
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM skills WHERE id = ?",
+        (skill_id,)
+    )
+
+    skill = cur.fetchone()
+    conn.close()
+
+    return skill
+
+def update_skill(skill_id, name, status):
+    conn = sqlite3.connect('skills.db')
+    cur = conn.curson()
+
+    cur.execute(
+        "UPDATE skills SET name = ?, status - ? WHERE id = ?",
+        (name, status, skill_id)
+    )
+
+    conn.commit()
+    conn.close()
 
 @app.route('/')
-def home():
-    return render_template('index.html', messages=messages)
+def index():
+    skills = get_skills()
+    return render_template("index.html", skills=skills)
 
-@app.route('/send', methods=['POST'])
-def send():
-    skill = request.form.get('skill', '').strip()
-    level = request.form.get('level', '').strip()
-    status = request.form.get('status', '').strip()
+@app.route('/add', methods=['POST'])
+def add():
+    name = request.form.get('name')
+    status = request.form.get('status')
 
-    if not skill or not level or not status:
-        return redirect('/')
-    
-    new_id = get_next_id(messages)
-    
-    messages.append({
-        "id": new_id,
-        "skill": skill,
-        "level": level,
-        "status": status
-    })
-    
+    if name and status:
+        add_skill(name, status)
+
     return redirect('/')
 
-@app.route('/delete/<int:item_id>', methods=['POST'])
-def delete(item_id):
-    for item in messages:
-        if item["id"] == item_id:
-            messages.remove(item)
-            break
+@app.route('/delete/<int:skill_id>', methods=['POST'])
+def delete(skill_id):
+    delete_skill(skill_id)
 
     return redirect('/')
 
 @app.route('/delete_all', methods=['POST'])
 def delete_all():
-    messages.clear()
+    delete_all_skills()
     return redirect('/')
 
-@app.route('/delete_selected', methods=['POST'])
-def delete_selected():
-    selected_ids = request.form.getlist('selected_ids')
+@app.route('/edit/<int:skill_id>')
+def edit(skill_id):
+    skill = get_skill(skill_id)
 
-    remaining_messages = []
+    return render_template("edit.html", skill=skill)
 
-    for item in messages:
-        if str(item["id"]) not in selected_ids:
-            remaining_messages.append(item)
-    
-    messages.clear()
+@app.route('/update/<int:skill_id>', methods=['POST'])
+def update(skill_id):
+    name = request.form.get('name')
+    status = request.form.get('status')
 
-    for item in remaining_messages:
-        messages.append(item)
-
-    return redirect('/')
-
-@app.route('/edit/<int:item_id>')
-def edit(item_id):
-    target_item = None
-    
-    for item in messages:
-        if item["id"] == item_id:
-            target_item = item
-            break
-    
-    if target_item is None:
-        return redirect('/')
-
-    return render_template('edit.html', item=item, index=item_id)
-
-@app.route('/update/<int:item_id>', methods=['POST'])
-def update(item_id):
-    target_item = None
-
-    for item in messages:
-        if item["id"] == item_id:
-            target_item = item
-            break
-    
-    if target_item is None:
-        return redirect('/')
-    
-    skill = request.form.get('skill', '').strip()
-    level = request.form.get('level', '').strip()
-    status = request.form.get('status', '').strip()
-
-    if not skill  or not level or not status:
-        return redirect(f'/edit/{item_id}')
-    
-    target_item["skill"] = skill
-    target_item["level"] = level
-    target_item["status"] = status
+    if name and status:
+        update_skill(skill_id, name, status)
 
     return redirect('/')
+
+init_db()
 
 if __name__ == '__main__':
+    init_db()
     app.run(host="0.0.0.0", port=5000, debug=True)
