@@ -54,6 +54,20 @@ def delete_skill(skill_id):
     conn.commit()
     conn.close()
 
+def delete_selected_skills(selected_ids):
+    conn = sqlite3.connect("skills.db")
+    cur = conn.cursor()
+
+    placeholders = ",".join(["?"] * len(selected_ids))
+
+    cur.execute(
+        f"DELETE FROM skills WHERE id IN ({placeholders})",
+        selected_ids
+    )
+
+    conn.commit()
+    conn.close()
+
 def delete_all_skills():
     conn = sqlite3.connect('skills.db')
     cur = conn.cursor()
@@ -110,6 +124,17 @@ def delete(skill_id):
     delete_skill(skill_id)
 
     return redirect('/')
+
+@app.route("/delete_selected", methods=["POST"])
+def delete_selected():
+    selected_ids = request.form.getlist("selected_ids")
+
+    if not selected_ids:
+        return redirect("/")
+    
+    delete_selected_skills(selected_ids)
+
+    return redirect("/")
 
 @app.route('/delete_all', methods=['POST'])
 def delete_all():

@@ -1,74 +1,57 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-	<meta charset="UTF-8">
-	<title>기술 목록</title>
-	<script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>기술 목록</title>
 </head>
+<body>
+    <h1>기술 목록</h1>
 
-<body class="p-8">
-	<h1 class="text-2xl font-bold mb-4">기술 목록</h1>	
+    <form action="/add" method="post">
+        <input type="text" name="name" placeholder="기술명" required>
+        <input type="text" name="status" placeholder="상태" required>
+        <button type="submit">추가</button>
+    </form>
 
-	<form action="/add" method="POST" class="mb-6 space-y-2">
-		<input
-			type="text"
-			name="name"
-			placeholder="기술명 예: Python"
-			required
-			class="border px-3 py-2 rounded w-full"
-		>
-		<input
-			type="text"
-			name="status"
-			placeholder="상태 예: 공부중, 복습필요, 완료"
-			required
-			class="border px-3 py-2 rounded w-full"
-		>
-		<button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
-			추가
-		</button>
-	</form>
+    <hr>
 
-	<h2 class="text-xl font-bold mb-3">입력한 데이터</h2>
+    <form id="delete-selected-form" action="/delete_selected" method="post"></form>
 
-	<div class="space-y-2">
-		{% for skill in skills %}
-			<div class="border p-3 rounded flex justify-between items-center">
-				<div>
-					<p class="font-bold">
-						#{{ skill["id"] }} {{ skill["name"] }}
-					</p>
-					<p class="text-sm text-gray-600">
-						상태: {{ skill["status"] }}
-					</p>
-				</div>
+    <ul>
+        {% for skill in skills %}
+            <li>
+                <input
+                    type="checkbox"
+                    name="selected_ids"
+                    value="{{ skill['id'] }}"
+                    form="delete-selected-form"
+>
 
-				<div class="flex gap-2">
-					<a href="/edit/{{ skill['id'] }}" class="bg-green-500 text-white px-3 py-1 rounded">
-						수정
-					</a>
+                {{ skill["id"] }}.
+                {{ skill["name"] }}
+                -
+                {{ skill["status"] }}
 
-					<form action="delete_all" method="POST" class="mt-6">
-						<button
-							type="submit"
-							class="bg-red-700 text-white px-4 py-2 rounded"
-							onclick="return confirm('정말 전체 삭제하시겠습니까?')"
-						>
-							전체 삭제
-						</button>
-					</form>
+                <a href="/edit/{{ skill['id'] }}">수정</a>
 
-					<form action="/delete/{{ skill['id'] }}" method="POST">
-						<button
-							type="submit"
-							class="bg-red-500 text-white px-3 py-1 rounded"
-						>
-							삭제
-						</button>
-					</form>
-				</div>
-			</div>
-		{% endfor %}
-	</div>
+                <form action="/delete/{{ skill['id'] }}" method="post" style="display:inline;">
+                    <button
+                        type="submit"
+                        onclick="return confirm('정말 삭제하시겠습니까?');"
+>
+                        삭제
+                    </button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <button
+        type="submit"
+        form="delete-selected-form"
+        onclick="return confirm('선택한 항목을 삭제하시겠습니까?');"
+>
+        선택 삭제
+    </button>
 </body>
 </html>
